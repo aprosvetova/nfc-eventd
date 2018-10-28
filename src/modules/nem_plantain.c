@@ -82,6 +82,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 free(_tag_uid);
             }
             tag_get_uid(nfc_device, tag, &_tag_uid);
+            ERR("%s", "WOW")
             print_nfc_target(tag, false);
             break;
         case EVENT_TAG_REMOVED:
