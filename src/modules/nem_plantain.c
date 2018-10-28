@@ -33,12 +33,14 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-#define ONERROR_IGNORE	0
-#define ONERROR_RETURN	1
-#define ONERROR_QUIT	2
+#define ONERROR_IGNORE    0
+#define ONERROR_RETURN    1
+#define ONERROR_QUIT    2
 
 #ifdef __APPLE__
+
 #include <crt_externs.h>
+
 #define environ (*_NSGetEnviron())
 #else
 extern char **environ;
@@ -49,26 +51,38 @@ static uint8_t keys[] = {
         0x77, 0xDA, 0xBC, 0x98, 0x25, 0xE1
 };
 static mifare_param mp;
-static char * _tag_uid = NULL;
+static char *_tag_uid = NULL;
 
 void
-nem_plantain_init( nfcconf_context *module_context, nfcconf_block* module_block ) {
-    set_debug_level ( 1 );
+nem_plantain_init(nfcconf_context *module_context, nfcconf_block *module_block) {
+    set_debug_level(1);
+}
+
+void
+load_tag(nfc_target *tag, char **dest) {
+    *dest = malloc(tag->nti.nai.szUidLen * sizeof(char) * 2 + 1);
+    size_t szPos;
+    char *pcUid = *dest;
+    for (szPos = 0; szPos < tag->nti.nai.szUidLen; szPos++) {
+        sprintf(pcUid, "%02x", tag->nti.nai.abtUid[szPos]);
+        pcUid += 2;
+    }
+    pcUid[0] = '\0';
 }
 
 bool
-authenticate(nfc_device* nfc_device, nfc_target* tag, uint8_t uiBlock) {
+authenticate(nfc_device *nfc_device, nfc_target *tag, uint8_t uiBlock) {
     memcpy(mp.mpa.abtAuthUid, tag->nti.nai.abtUid + tag->nti.nai.szUidLen - 4, 4);
     if (uiBlock == 0x10) {
         memcpy(mp.mpa.abtKey, keys, 6);
     } else {
-        memcpy(mp.mpa.abtKey, keys+6, 6);
+        memcpy(mp.mpa.abtKey, keys + 6, 6);
     }
     return nfc_initiator_mifare_cmd(nfc_device, MC_AUTH_A, uiBlock, &mp);
 }
 
 int
-nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_event_t event) {
+nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_event_t event) {
     int balance = -1;
     int lastPaymentDate = -1;
     int lastPaymentValue = -1;
@@ -79,13 +93,14 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
     int groundCount = -1;
     switch (event) {
         case EVENT_TAG_INSERTED:
+            load_tag(tag, &_tag_uid);
             if (!authenticate(nfc_device, tag, 0x10)) {
                 ERR("%s", "Can't auth block 16");
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
-                balance = *(int *)mp.mpd.abtData;
-                balance = balance/100;
+                balance = *(int *) mp.mpd.abtData;
+                balance = balance / 100;
                 if (balance < 0) {
                     balance = -1;
                 }
@@ -98,13 +113,13 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 if (lastPaymentDate <= 0) {
                     lastPaymentDate = -1;
                 } else {
-                    lastPaymentDate = lastPaymentDate*60+1262293200;
+                    lastPaymentDate = lastPaymentDate * 60 + 1262293200;
                 }
                 lastPaymentValue = mp.mpd.abtData[10] << 16 | mp.mpd.abtData[9] << 8 | mp.mpd.abtData[8];
                 if (lastPaymentValue <= 0) {
                     lastPaymentValue = -1;
                 } else {
-                    lastPaymentValue = lastPaymentValue/100;
+                    lastPaymentValue = lastPaymentValue / 100;
                 }
             } else {
                 ERR("%s", "Can't read block 18");
@@ -118,13 +133,13 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 if (lastRideDate <= 0) {
                     lastRideDate = -1;
                 } else {
-                    lastRideDate = lastRideDate*60+1262293200;
+                    lastRideDate = lastRideDate * 60 + 1262293200;
                 }
                 lastRideCost = mp.mpd.abtData[7] << 8 | mp.mpd.abtData[6];
                 if (lastRideCost <= 0) {
                     lastRideCost = -1;
                 } else {
-                    lastRideCost = lastRideCost/100;
+                    lastRideCost = lastRideCost / 100;
                 }
                 lastValidatorId = mp.mpd.abtData[5] << 8 | mp.mpd.abtData[4];
                 if (lastValidatorId <= 0) {
@@ -146,7 +161,9 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             char url[1024];
-            sprintf(url,"http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", tag->nti.nai.abtUid, balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
+            sprintf(url, "http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d",
+                    _tag_uid, balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId,
+                    subwayCount, groundCount);
             printf("%s\n", url);
             http_get_response_t *res = http_get(url);
             http_get_free(res);
@@ -187,7 +204,7 @@ http_get_response_t *http_get(const char *url) {
     curl_easy_setopt(req, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(req, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(req, CURLOPT_WRITEFUNCTION, http_get_cb);
-    curl_easy_setopt(req, CURLOPT_WRITEDATA, (void *)&res);
+    curl_easy_setopt(req, CURLOPT_WRITEDATA, (void *) &res);
 
     int c = curl_easy_perform(req);
 
@@ -205,11 +222,10 @@ void http_get_free(http_get_response_t *res) {
 }
 
 bool
-nfc_initiator_mifare_cmd(nfc_device *pnd, const mifare_cmd mc, const uint8_t ui8Block, mifare_param *pmp)
-{
-    uint8_t  abtRx[265];
-    size_t  szParamLen;
-    uint8_t  abtCmd[265];
+nfc_initiator_mifare_cmd(nfc_device *pnd, const mifare_cmd mc, const uint8_t ui8Block, mifare_param *pmp) {
+    uint8_t abtRx[265];
+    size_t szParamLen;
+    uint8_t abtCmd[265];
     //bool    bEasyFraming;
 
     abtCmd[0] = mc;               // The MIFARE Classic command
@@ -257,7 +273,7 @@ nfc_initiator_mifare_cmd(nfc_device *pnd, const mifare_cmd mc, const uint8_t ui8
     }
     // Fire the mifare command
     int res;
-    if ((res = nfc_initiator_transceive_bytes(pnd, abtCmd, 2 + szParamLen, abtRx, sizeof(abtRx), -1))  < 0) {
+    if ((res = nfc_initiator_transceive_bytes(pnd, abtCmd, 2 + szParamLen, abtRx, sizeof(abtRx), -1)) < 0) {
         if (res == NFC_ERFTRANS) {
             // "Invalid received frame",  usual means we are
             // authenticated on a sector but the requested MIFARE cmd (read, write)
