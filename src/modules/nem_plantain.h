@@ -244,3 +244,20 @@ typedef union {
 
 #endif /* __NEM_PLANTAIN__ */
 
+#ifndef HTTP_GET_H
+#define HTTP_GET_H 1
+
+#define HTTP_GET_VERSION "0.1.0"
+
+typedef struct {
+    char *data;
+    size_t size;
+    long status;
+    int ok;
+} http_get_response_t;
+
+http_get_response_t *http_get(const char *);
+
+void http_get_free(http_get_response_t *);
+
+#endif

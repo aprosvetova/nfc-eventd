@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <curl/curl.h>
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -152,7 +153,11 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 ERR("%s", "Can't read block 21");
                 return -1;
             }
-            printf("Balance: %d rub\nLast Payment: %d, %d rub\nLast Ride: %d, %d rub, #%d\nSubway: %d\nGround: %d\n", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
+            char url[1024];
+            sprintf(url,"https://webhook.site/0cd3f388-8066-4a30-a26b-58a7cedc827f?b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
+            printf("%s\n", url);
+            http_get_response_t *res = http_get(url);
+            http_get_free(res);
             break;
         case EVENT_TAG_REMOVED:
             break;
@@ -160,6 +165,51 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             return -1;
     }
     return 0;
+}
+
+static size_t http_get_cb(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    http_get_response_t *res = userp;
+
+    res->data = realloc(res->data, res->size + realsize + 1);
+    if (NULL == res->data) {
+        fprintf(stderr, "not enough memory!");
+        return 0;
+    }
+
+    memcpy(&(res->data[res->size]), contents, realsize);
+    res->size += realsize;
+    res->data[res->size] = 0;
+
+    return realsize;
+}
+
+http_get_response_t *http_get(const char *url) {
+    CURL *req = curl_easy_init();
+
+    static http_get_response_t res;
+    res.data = malloc(1);
+    res.size = 0;
+
+    curl_easy_setopt(req, CURLOPT_URL, url);
+    curl_easy_setopt(req, CURLOPT_HTTPGET, 1);
+    curl_easy_setopt(req, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(req, CURLOPT_WRITEFUNCTION, http_get_cb);
+    curl_easy_setopt(req, CURLOPT_WRITEDATA, (void *)&res);
+
+    int c = curl_easy_perform(req);
+
+    curl_easy_getinfo(req, CURLINFO_RESPONSE_CODE, &res.status);
+    res.ok = (200 == res.status && CURLE_ABORTED_BY_CALLBACK != c) ? 1 : 0;
+    curl_easy_cleanup(req);
+
+    return &res;
+}
+
+
+void http_get_free(http_get_response_t *res) {
+    if (NULL == res) return;
+    free(res->data);
 }
 
 bool
