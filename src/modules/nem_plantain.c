@@ -96,9 +96,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
-                char *lastPaymentDateP = (char*) malloc(3);
-                memcpy(lastPaymentDateP, mp.mpd.abtData + 2, 3);
-                lastPaymentDate = *(int *)lastPaymentDateP;
+                lastPaymentDate = mp.mpd.abtData[2] << 16 | mp.mpd.abtData[3] << 8 | mp.mpd.abtData[4];
                 printf("%d\n", lastPaymentDate);
             } else {
                 ERR("%s", "Can't read block 18");
@@ -107,10 +105,16 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             if (!authenticate(nfc_device, tag, 0x14)) {
                 ERR("%s", "Can't auth block 20");
             }
-            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
+            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x14, &mp)) {
 
             } else {
-                ERR("%s", "Can't read block 18");
+                ERR("%s", "Can't read block 20");
+                return -1;
+            }
+            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x15, &mp)) {
+
+            } else {
+                ERR("%s", "Can't read block 21");
                 return -1;
             }
             print_nfc_target(tag, false);
