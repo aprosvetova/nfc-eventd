@@ -82,15 +82,18 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
     switch (event) {
         case EVENT_TAG_INSERTED:
             load_tag(nfc_device, tag);
-            if (authenticate(nfc_device, tag, 0x10)) {
-                ERR("%s", "SUCKASS");
-            } else {
-                ERR("%s", "fail(");
+            if (!authenticate(nfc_device, tag, 0x10)) {
+                ERR("%s", "Can't auth block 16");
+                return -1;
             }
-            if (authenticate(nfc_device, tag, 0x16)) {
-                ERR("%s", "SUCKASS");
+            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
+                printf("%02X:%02X:%02X:%02X", mp.mpd.abtData[0], mp.mpd.abtData[1], mp.mpd.abtData[2], mp.mpd.abtData[3]);
             } else {
-                ERR("%s", "fail(");
+                printf("!\nError: unable to read block 0x%02x\n", 0x10);
+                return -1;
+            }
+            if (!authenticate(nfc_device, tag, 0x14)) {
+                ERR("%s", "Can't auth block 20");
             }
             print_nfc_target(tag, false);
             break;
