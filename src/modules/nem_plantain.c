@@ -69,7 +69,11 @@ load_tag(nfc_device* nfc_device, nfc_target* tag) {
 bool
 authenticate(nfc_device* nfc_device, nfc_target* tag, uint8_t uiBlock) {
     memcpy(mp.mpa.abtAuthUid, tag->nti.nai.abtUid + tag->nti.nai.szUidLen - 4, 4);
-    memcpy(mp.mpa.abtKey, keys, 6);
+    if (uiBlock == 0x10) {
+        memcpy(mp.mpa.abtKey, keys, 6);
+    } else {
+        memcpy(mp.mpa.abtKey, keys+6, 6);
+    }
     return nfc_initiator_mifare_cmd(nfc_device, MC_AUTH_A, uiBlock, &mp);
 }
 
