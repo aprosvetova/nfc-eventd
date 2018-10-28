@@ -81,6 +81,11 @@ authenticate(nfc_device *nfc_device, nfc_target *tag, uint8_t uiBlock) {
     return nfc_initiator_mifare_cmd(nfc_device, MC_AUTH_A, uiBlock, &mp);
 }
 
+void notifyError() {
+    http_get_response_t *res = http_get("http://127.0.0.1:9566/error");
+    http_get_free(res);
+}
+
 int
 nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_event_t event) {
     int balance = -1;
@@ -96,6 +101,7 @@ nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_ev
             load_tag(tag, &_tag_uid);
             if (!authenticate(nfc_device, tag, 0x10)) {
                 ERR("%s", "Can't auth block 16");
+                notifyError();
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
@@ -106,6 +112,7 @@ nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_ev
                 }
             } else {
                 ERR("%s", "Can't read block 16");
+                notifyError();
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
@@ -123,10 +130,13 @@ nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_ev
                 }
             } else {
                 ERR("%s", "Can't read block 18");
+                notifyError();
                 return -1;
             }
             if (!authenticate(nfc_device, tag, 0x14)) {
                 ERR("%s", "Can't auth block 20");
+                notifyError();
+                return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x14, &mp)) {
                 lastRideDate = mp.mpd.abtData[2] << 16 | mp.mpd.abtData[1] << 8 | mp.mpd.abtData[0];
@@ -147,6 +157,7 @@ nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_ev
                 }
             } else {
                 ERR("%s", "Can't read block 20");
+                notifyError();
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x15, &mp)) {
@@ -158,13 +169,13 @@ nem_plantain_event_handler(nfc_device *nfc_device, nfc_target *tag, const nem_ev
                 }
             } else {
                 ERR("%s", "Can't read block 21");
+                notifyError();
                 return -1;
             }
             char url[1024];
-            sprintf(url, "http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d",
+            sprintf(url, "http://127.0.0.1:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d",
                     _tag_uid, balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId,
                     subwayCount, groundCount);
-            printf("%s\n", url);
             http_get_response_t *res = http_get(url);
             http_get_free(res);
             break;
