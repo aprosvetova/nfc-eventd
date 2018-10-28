@@ -1,0 +1,3 @@
+/Users/koteeq/Projects/Github/nfc-eventd/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/koteeq/Projects/Github/nfc-eventd/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/koteeq/Projects/Github/nfc-eventd/cmake-build-debug/CMakeFiles/nfc_eventd.dir

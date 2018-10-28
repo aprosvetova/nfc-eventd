@@ -50,7 +50,7 @@
 #define DEF_POLLING 1    /* 1 second timeout */
 #define DEF_EXPIRE 0    /* no expire */
 
-#define DEF_CONFIG_FILE SYSCONFDIR"/nfc-eventd.conf"
+#define DEF_CONFIG_FILE "/etc/nfc/nfc-eventd.conf"
 
 int polling_time;
 int expire_time;
@@ -105,7 +105,7 @@ static int load_module( void ) {
     }
     DBG("Loading module: '%s'...", my_module->name->data);
     char module_path[256]={ '\0', };
-    strcat(module_path, NEMDIR"/" );
+    strcat(module_path, "modules/" );
     strcat(module_path, my_module->name->data);
     strcat(module_path, ".so");
     DBG("Module found at: '%s'...", module_path);
@@ -328,7 +328,7 @@ main ( int argc, char *argv[] ) {
 
     int expire_count = 0;
 
-    INFO ("%s", PACKAGE_STRING);
+    INFO ("%s", "nfc-eventd");
 
     /* parse args and configuration file */
     parse_args ( argc, argv );
