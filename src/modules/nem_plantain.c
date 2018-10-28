@@ -43,7 +43,6 @@
 extern char **environ;
 #endif
 
-static char * _tag_uid = NULL;
 static uint8_t keys[] = {
         0xE5, 0x6A, 0xC1, 0x27, 0xDD, 0x45,
         0x77, 0xDA, 0xBC, 0x98, 0x25, 0xE1
@@ -78,11 +77,13 @@ int
 nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_event_t event) {
     switch (event) {
         case EVENT_TAG_INSERTED:
-            if ( _tag_uid != NULL ) {
-                free(_tag_uid);
-            }
             load_tag(nfc_device, tag);
             if (authenticate(nfc_device, tag, 0x10)) {
+                ERR("%s", "SUCKASS");
+            } else {
+                ERR("%s", "fail(");
+            }
+            if (authenticate(nfc_device, tag, 0x16)) {
                 ERR("%s", "SUCKASS");
             } else {
                 ERR("%s", "fail(");
@@ -93,11 +94,6 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             break;
         default:
             return -1;
-    }
-
-    if ( _tag_uid == NULL ) {
-        ERR( "%s", "Unable to read tag UID... This should not happend !" );
-        exit ( EXIT_FAILURE );
     }
     return 0;
 }
