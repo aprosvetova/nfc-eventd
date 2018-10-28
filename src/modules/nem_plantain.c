@@ -88,8 +88,10 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
                 printf("%02X:%02X:%02X:%02X", mp.mpd.abtData[0], mp.mpd.abtData[1], mp.mpd.abtData[2], mp.mpd.abtData[3]);
+                int x = *(int *)mp.mpd.abtData;
+                printf("%d\n", x);
             } else {
-                printf("!\nError: unable to read block 0x%02x\n", 0x10);
+                ERR("%s", "Can't read block 16");
                 return -1;
             }
             if (!authenticate(nfc_device, tag, 0x14)) {
