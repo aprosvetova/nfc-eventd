@@ -119,7 +119,22 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 ERR("%s", "Can't auth block 20");
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x14, &mp)) {
-
+                lastRideDate = mp.mpd.abtData[2] << 16 | mp.mpd.abtData[1] << 8 | mp.mpd.abtData[0];
+                if (lastRideDate <= 0) {
+                    lastRideDate = -1;
+                } else {
+                    lastRideDate = lastRideDate*60+1262293200;
+                }
+                lastRideCost = mp.mpd.abtData[7] << 8 | mp.mpd.abtData[6];
+                if (lastRideCost <= 0) {
+                    lastRideCost = -1;
+                } else {
+                    lastRideCost = lastRideCost/100;
+                }
+                lastValidatorId = mp.mpd.abtData[5] << 8 | mp.mpd.abtData[4];
+                if (lastValidatorId <= 0) {
+                    lastValidatorId = -1;
+                }
             } else {
                 ERR("%s", "Can't read block 20");
                 return -1;
@@ -130,7 +145,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 ERR("%s", "Can't read block 21");
                 return -1;
             }
-            printf("Balance: %d rub\nLast Payment: %d, %d rub\n", balance, lastPaymentDate, lastPaymentValue);
+            printf("Balance: %d rub\nLast Payment: %d, %d rub\nLast Ride: %d, %d rub, #%d\n", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId);
             break;
         case EVENT_TAG_REMOVED:
             break;
