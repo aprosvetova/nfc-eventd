@@ -49,6 +49,7 @@ static uint8_t keys[] = {
         0x77, 0xDA, 0xBC, 0x98, 0x25, 0xE1
 };
 static mifare_param mp;
+static char * _tag_uid = NULL;
 
 void
 nem_plantain_init( nfcconf_context *module_context, nfcconf_block* module_block ) {
@@ -56,8 +57,19 @@ nem_plantain_init( nfcconf_context *module_context, nfcconf_block* module_block 
 }
 
 bool
-load_tag(nfc_device* nfc_device, nfc_target* tag) {
-    return nfc_initiator_select_passive_target(nfc_device, tag->nm, tag->nti.nai.abtUid, tag->nti.nai.szUidLen, tag) != 0;
+load_tag(nfc_device* nfc_device, nfc_target* tag, char **dest) {
+    if(nfc_initiator_select_passive_target(nfc_device, tag->nm, tag->nti.nai.abtUid, tag->nti.nai.szUidLen, tag)) {
+        *dest = malloc(tag->nti.nai.szUidLen*sizeof(char)*2+1);
+        size_t szPos;
+        char *pcUid = *dest;
+        for (szPos=0; szPos < tag->nti.nai.szUidLen; szPos++) {
+            sprintf(pcUid, "%02x",tag->nti.nai.abtUid[szPos]);
+            pcUid += 2;
+        }
+        pcUid[0]='\0';
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -154,7 +166,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             char url[1024];
-            sprintf(url,"https://webhook.site/0cd3f388-8066-4a30-a26b-58a7cedc827f?b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
+            sprintf(url,"http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", _tag_uid, balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
             printf("%s\n", url);
             http_get_response_t *res = http_get(url);
             http_get_free(res);
