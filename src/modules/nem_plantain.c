@@ -145,9 +145,8 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 if (mp.mpd.abtData[0] >= 0) {
                     subwayCount = mp.mpd.abtData[0];
                 }
-                groundCount = mp.mpd.abtData[1] << 8 | mp.mpd.abtData[0];
-                if (groundCount <= 0) {
-                    groundCount = -1;
+                if (mp.mpd.abtData[1] >= 0) {
+                    groundCount = mp.mpd.abtData[1];
                 }
             } else {
                 ERR("%s", "Can't read block 21");
