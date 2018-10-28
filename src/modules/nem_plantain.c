@@ -91,13 +91,26 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
                 balance = *(int *)mp.mpd.abtData;
                 balance = balance/100;
+                if (balance < 0) {
+                    balance = -1;
+                }
             } else {
                 ERR("%s", "Can't read block 16");
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
                 lastPaymentDate = mp.mpd.abtData[2] << 16 | mp.mpd.abtData[3] << 8 | mp.mpd.abtData[4];
-                printf("%d\n", lastPaymentDate);
+                if (lastPaymentDate <= 0) {
+                    lastPaymentDate = -1;
+                } else {
+                    lastPaymentDate = lastPaymentDate*60+1262293200;
+                }
+                lastPaymentValue = mp.mpd.abtData[8] << 16 | mp.mpd.abtData[9] << 8 | mp.mpd.abtData[10];
+                if (lastPaymentValue <= 0) {
+                    lastPaymentValue = -1;
+                } else {
+                    lastPaymentValue = lastPaymentValue/100;
+                }
             } else {
                 ERR("%s", "Can't read block 18");
                 return -1;
@@ -117,7 +130,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 ERR("%s", "Can't read block 21");
                 return -1;
             }
-            print_nfc_target(tag, false);
+            printf("Balance: %d rub\nLast Payment: %d, %d rub\n", balance, lastPaymentDate, lastPaymentValue);
             break;
         case EVENT_TAG_REMOVED:
             break;
