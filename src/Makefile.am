@@ -6,7 +6,7 @@ SUBDIRS = debug nfcconf modules
 INCLUDES = $(all_includes)
 
 AM_CFLAGS = -ldl -DNEMDIR=\"${nemdir}\" -DSYSCONFDIR=\"${sysconfdir}\" @LIBNFC_CFLAGS@
-AM_LDFLAGS = @LIBNFC_LIBS@
+AM_LDFLAGS = @LIBNFC_LIBS@ -lcurl
 
 bin_PROGRAMS = nfc-eventd
 nfc_eventd_SOURCES = nfc-eventd.c
