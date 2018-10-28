@@ -84,6 +84,8 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
             int lastRideDate = -1;
             int lastRideCost = -1;
             int lastValidatorId = -1;
+            int subwayCount = -1;
+            int groundCount = -1;
             if (!authenticate(nfc_device, tag, 0x10)) {
                 ERR("%s", "Can't auth block 16");
                 return -1;
@@ -140,12 +142,18 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x15, &mp)) {
-
+                if (mp.mpd.abtData[0] >= 0) {
+                    subwayCount = mp.mpd.abtData[0];
+                }
+                groundCount = mp.mpd.abtData[1] << 8 | mp.mpd.abtData[0];
+                if (groundCount <= 0) {
+                    groundCount = -1;
+                }
             } else {
                 ERR("%s", "Can't read block 21");
                 return -1;
             }
-            printf("Balance: %d rub\nLast Payment: %d, %d rub\nLast Ride: %d, %d rub, #%d\n", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId);
+            printf("Balance: %d rub\nLast Payment: %d, %d rub\nLast Ride: %d, %d rub, #%d\nSubway: %d\nGround: %d\n", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
             break;
         case EVENT_TAG_REMOVED:
             break;
