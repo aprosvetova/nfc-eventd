@@ -105,7 +105,7 @@ static int load_module( void ) {
     }
     DBG("Loading module: '%s'...", my_module->name->data);
     char module_path[256]={ '\0', };
-    strcat(module_path, "modules/" );
+    strcat(module_path, "/usr/local/lib/nfc-eventd/modules/" );
     strcat(module_path, my_module->name->data);
     strcat(module_path, ".so");
     DBG("Module found at: '%s'...", module_path);
