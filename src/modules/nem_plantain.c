@@ -57,22 +57,6 @@ nem_plantain_init( nfcconf_context *module_context, nfcconf_block* module_block 
 }
 
 bool
-load_tag(nfc_device* nfc_device, nfc_target* tag, char **dest) {
-    if(nfc_initiator_select_passive_target(nfc_device, tag->nm, tag->nti.nai.abtUid, tag->nti.nai.szUidLen, tag)) {
-        *dest = malloc(tag->nti.nai.szUidLen*sizeof(char)*2+1);
-        size_t szPos;
-        char *pcUid = *dest;
-        for (szPos=0; szPos < tag->nti.nai.szUidLen; szPos++) {
-            sprintf(pcUid, "%02x",tag->nti.nai.abtUid[szPos]);
-            pcUid += 2;
-        }
-        pcUid[0]='\0';
-        return true;
-    }
-    return false;
-}
-
-bool
 authenticate(nfc_device* nfc_device, nfc_target* tag, uint8_t uiBlock) {
     memcpy(mp.mpa.abtAuthUid, tag->nti.nai.abtUid + tag->nti.nai.szUidLen - 4, 4);
     if (uiBlock == 0x10) {
@@ -95,10 +79,6 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
     int groundCount = -1;
     switch (event) {
         case EVENT_TAG_INSERTED:
-            /*if (!load_tag(nfc_device, tag, &_tag_uid)) {
-                ERR("%s", "Can't load tag");
-                return -1;
-            }*/
             if (!authenticate(nfc_device, tag, 0x10)) {
                 ERR("%s", "Can't auth block 16");
                 return -1;
@@ -166,7 +146,7 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             char url[1024];
-            sprintf(url,"http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", "a", balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
+            sprintf(url,"http://192.168.1.2:9566/tag?id=%s&b=%d&lpd=%d&lpv=%d&lrd=%d&lrc=%d&lrv=%d&sub=%d&gr=%d", tag->nti.nai.abtUid, balance, lastPaymentDate, lastPaymentValue, lastRideDate, lastRideCost, lastValidatorId, subwayCount, groundCount);
             printf("%s\n", url);
             http_get_response_t *res = http_get(url);
             http_get_free(res);
