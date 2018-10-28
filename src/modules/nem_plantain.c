@@ -87,7 +87,7 @@ int
 nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_event_t event) {
     switch (event) {
         case EVENT_TAG_INSERTED:
-            if (!load_tag(nfc_device, tag)) {
+            if (!load_tag(nfc_device, tag, &_tag_uid)) {
                 ERR("%s", "Can't load tag");
                 return -1;
             }
