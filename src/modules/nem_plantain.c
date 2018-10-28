@@ -99,13 +99,13 @@ nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_ev
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
-                lastPaymentDate = mp.mpd.abtData[2] << 16 | mp.mpd.abtData[3] << 8 | mp.mpd.abtData[4];
+                lastPaymentDate = mp.mpd.abtData[4] << 16 | mp.mpd.abtData[3] << 8 | mp.mpd.abtData[2];
                 if (lastPaymentDate <= 0) {
                     lastPaymentDate = -1;
                 } else {
                     lastPaymentDate = lastPaymentDate*60+1262293200;
                 }
-                lastPaymentValue = mp.mpd.abtData[8] << 16 | mp.mpd.abtData[9] << 8 | mp.mpd.abtData[10];
+                lastPaymentValue = mp.mpd.abtData[10] << 16 | mp.mpd.abtData[9] << 8 | mp.mpd.abtData[8];
                 if (lastPaymentValue <= 0) {
                     lastPaymentValue = -1;
                 } else {
