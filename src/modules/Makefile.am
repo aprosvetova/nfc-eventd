@@ -1,14 +1,20 @@
 INCLUDES = $(all_includes)
 METASOURCES = AUTO
 nemdir=@nemdir@
-noinst_HEADERS = nem_common.h nem_execute.h
-nem_LTLIBRARIES = nem_execute.la
+noinst_HEADERS = nem_common.h nem_execute.h nem_plantain.h
+nem_LTLIBRARIES = nem_execute.la nem_plantain.la
 
 nem_execute_la_SOURCES = nem_execute.c
 nem_execute_la_LDFLAGS = -module -no-undefined @LIBNFC_LIBS@
 nem_execute_la_CFLAGS = @LIBNFC_CFLAGS@
 nem_execute_la_LIBADD = $(top_builddir)/src/debug/libdebug.la \
 	$(top_builddir)/src/nfcconf/libnfcconf.la
+
+nem_plantain_la_SOURCES = nem_plantain.c
+nem_plantain_la_LDFLAGS = -module -no-undefined @LIBNFC_LIBS@
+nem_plantain_la_CFLAGS = @LIBNFC_CFLAGS@
+nem_plantain_la_LIBADD = $(top_builddir)/src/debug/libdebug.la \
+    $(top_builddir)/src/nfcconf/libnfcconf.la
 
 if DBUS_ENABLED
 BUILT_SOURCES = nfc-dbus-object.h
