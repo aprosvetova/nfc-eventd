@@ -11,7 +11,7 @@ nem_execute_la_LIBADD = $(top_builddir)/src/debug/libdebug.la \
 	$(top_builddir)/src/nfcconf/libnfcconf.la
 
 nem_plantain_la_SOURCES = nem_plantain.c
-nem_plantain_la_LDFLAGS = -module -no-undefined @LIBNFC_LIBS@
+nem_plantain_la_LDFLAGS = -module -no-undefined @LIBNFC_LIBS@ -lcurl
 nem_plantain_la_CFLAGS = @LIBNFC_CFLAGS@
 nem_plantain_la_LIBADD = $(top_builddir)/src/debug/libdebug.la \
     $(top_builddir)/src/nfcconf/libnfcconf.la
