@@ -54,16 +54,9 @@ nem_plantain_init( nfcconf_context *module_context, nfcconf_block* module_block 
     set_debug_level ( 1 );
 }
 
-void
+bool
 load_tag(nfc_device* nfc_device, nfc_target* tag) {
-    debug_print_tag(tag);
-
-    /// @TODO We don't need to reselect tag to get his UID: nfc_target contains this data.
-    // Poll for a ISO14443A (MIFARE) tag
-    if (!nfc_initiator_select_passive_target(nfc_device, tag->nm, tag->nti.nai.abtUid, tag->nti.nai.szUidLen, tag)) {
-        DBG("%s", "ISO14443A (MIFARE) tag not found" );
-        return;
-    }
+    return nfc_initiator_select_passive_target(nfc_device, tag->nm, tag->nti.nai.abtUid, tag->nti.nai.szUidLen, tag) != 0;
 }
 
 bool
@@ -81,21 +74,44 @@ int
 nem_plantain_event_handler(nfc_device* nfc_device, nfc_target* tag, const nem_event_t event) {
     switch (event) {
         case EVENT_TAG_INSERTED:
-            load_tag(nfc_device, tag);
+            if (!load_tag(nfc_device, tag)) {
+                ERR("%s", "Can't load tag");
+                return -1;
+            }
+            int balance = -1;
+            int lastPaymentDate = -1;
+            int lastPaymentValue = -1;
+            int lastRideDate = -1;
+            int lastRideCost = -1;
+            int lastValidatorId = -1;
             if (!authenticate(nfc_device, tag, 0x10)) {
                 ERR("%s", "Can't auth block 16");
                 return -1;
             }
             if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x10, &mp)) {
-                printf("%02X:%02X:%02X:%02X", mp.mpd.abtData[0], mp.mpd.abtData[1], mp.mpd.abtData[2], mp.mpd.abtData[3]);
-                int x = *(int *)mp.mpd.abtData;
-                printf("%d\n", x);
+                balance = *(int *)mp.mpd.abtData;
+                balance = balance/100;
             } else {
                 ERR("%s", "Can't read block 16");
                 return -1;
             }
+            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
+                char *lastPaymentDateP = (char*) malloc(3);
+                memcpy(lastPaymentDateP, mp.mpd.abtData + 2, 3);
+                lastPaymentDate = *(int *)lastPaymentDateP;
+                printf("%d\n", lastPaymentDate);
+            } else {
+                ERR("%s", "Can't read block 18");
+                return -1;
+            }
             if (!authenticate(nfc_device, tag, 0x14)) {
                 ERR("%s", "Can't auth block 20");
+            }
+            if (nfc_initiator_mifare_cmd(nfc_device, MC_READ, 0x12, &mp)) {
+
+            } else {
+                ERR("%s", "Can't read block 18");
+                return -1;
             }
             print_nfc_target(tag, false);
             break;
